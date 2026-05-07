@@ -96,10 +96,27 @@ supabase/                Supabase config and migrations
 ## Quality checks
 
 ```bash
+npm ci
 npm run typecheck
 npm run lint
 npm run build
 ```
+
+Or run everything with:
+
+```bash
+npm run check
+```
+
+## CI/CD
+
+GitHub Actions workflows are included in this repo:
+
+- `CI`: lint, typecheck, and production build on push/PR
+- `Vercel Preview Deploy`: preview deployment for pull requests
+- `Vercel Production Deploy`: production deployment on push to `main`
+
+Setup details are documented in [docs/ci-cd.md](./docs/ci-cd.md).
 
 ## Deployment
 
@@ -125,6 +142,10 @@ npm run build
 2. Add the same environment variables from `.env.local`.
 3. Set the production URL in `NEXT_PUBLIC_SITE_URL`.
 4. Deploy.
+5. Add these GitHub Actions secrets for automated preview and production deploys:
+   - `VERCEL_TOKEN`
+   - `VERCEL_ORG_ID`
+   - `VERCEL_PROJECT_ID`
 
 ## Future-ready extension points
 
