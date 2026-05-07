@@ -3,9 +3,23 @@ import Link from "next/link";
 import { SignInForm } from "@/components/auth/sign-in-form";
 import { LogoMark } from "@/components/shared/logo-mark";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | undefined>>;
+}) {
+  const params = await searchParams;
+  const errorParam = params.error;
+
+  const errorMessages: Record<string, string> = {
+    pending_approval: "Your account is awaiting admin approval. Please contact your administrator.",
+  };
+
+  const errorMessage = errorParam ? errorMessages[errorParam] : null;
+
   return (
     <main className="flex min-h-screen items-center justify-center px-6 py-10">
       <div className="w-full max-w-5xl">
@@ -39,7 +53,12 @@ export default function LoginPage() {
               <CardTitle>Sign in</CardTitle>
               <CardDescription>Use your SSFI credentials to access the platform.</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              {errorMessage ? (
+                <Alert variant="destructive">
+                  <AlertDescription>{errorMessage}</AlertDescription>
+                </Alert>
+              ) : null}
               <SignInForm />
             </CardContent>
           </Card>

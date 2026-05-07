@@ -8,6 +8,7 @@ import { forgotPasswordSchema, loginSchema } from "@/lib/schemas";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { env } from "@/lib/env";
 import type { AppRole } from "@/types/domain";
+import type { Provider } from "@supabase/supabase-js";
 
 export type ActionState = {
   error?: string;
@@ -110,4 +111,36 @@ export async function signOutAction() {
   const supabase = await createSupabaseServerClient();
   await supabase?.auth.signOut();
   redirect("/login");
+}
+
+export async function signInWithOAuthAction(provider: Provider): Promise<ActionState> {
+  if (!env.isSupabaseConfigured) {
+    redirect("/dashboard");
+  }
+
+  const supabase = await createSupabaseServerClient();
+  if (!supabase) {
+    return { error: "Supabase is not configured." };
+  }
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider,
+    options: {
+      redirectTo: `${env.siteUrl}/auth/callback`,
+      queryParams: {
+        access_type: "offline",
+        prompt: "consent",
+      },
+    },
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  if (data.url) {
+    redirect(data.url);
+  }
+
+  return { error: "Failed to initiate Google sign-in." };
 }

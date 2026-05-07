@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Archive, BookUser, ChartNoAxesCombined, ContactRound, FileStack, ShieldCheck, Users } from "lucide-react";
+import { Archive, BookUser, ChartNoAxesCombined, ContactRound, FileStack, Settings2, ShieldCheck, Users } from "lucide-react";
 
 import { LogoMark } from "@/components/shared/logo-mark";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ const navItems = [
   { href: "/alumni", label: "Alumni", icon: BookUser },
   { href: "/documents", label: "Documents", icon: FileStack },
   { href: "/directory", label: "Directory", icon: ContactRound },
+  { href: "/dashboard/settings", label: "Settings", icon: Settings2 },
 ] as const;
 
 const adminNavItems = [{ href: "/admin", label: "Admin", icon: ShieldCheck }] as const;
