@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { Archive, BookUser, ChartNoAxesCombined, ContactRound, FileStack, Users } from "lucide-react";
+import { Archive, BookUser, ChartNoAxesCombined, ContactRound, FileStack, ShieldCheck, Users } from "lucide-react";
 
 import { LogoMark } from "@/components/shared/logo-mark";
 import { Badge } from "@/components/ui/badge";
+import { canAccessAdmin } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 import type { UserProfile } from "@/types/domain";
 
@@ -13,7 +14,9 @@ const navItems = [
   { href: "/alumni", label: "Alumni", icon: BookUser },
   { href: "/documents", label: "Documents", icon: FileStack },
   { href: "/directory", label: "Directory", icon: ContactRound },
-];
+] as const;
+
+const adminNavItems = [{ href: "/admin", label: "Admin", icon: ShieldCheck }] as const;
 
 export function Sidebar({ pathname, profile, mobile = false }: { pathname: string; profile: UserProfile; mobile?: boolean }) {
   return (
@@ -31,7 +34,7 @@ export function Sidebar({ pathname, profile, mobile = false }: { pathname: strin
       </Badge>
 
       <nav className="space-y-1.5">
-        {navItems.map((item) => {
+        {[...navItems, ...(canAccessAdmin(profile.role) ? adminNavItems : [])].map((item) => {
           const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
           return (
             <Link

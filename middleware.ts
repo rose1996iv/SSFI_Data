@@ -11,6 +11,7 @@ const protectedPrefixes = [
   "/alumni",
   "/documents",
   "/directory",
+  "/admin",
   "/api/members",
   "/api/search",
   "/api/documents",

@@ -10,6 +10,33 @@ async function getUserRoleLabel(role: AppRole) {
   return roleOptions.find((option) => option.key === role)?.name || "Guest";
 }
 
+type UserRoleJoin = {
+  id: string;
+  email: string;
+  display_name: string | null;
+  member_id: string | null;
+  is_approved: boolean;
+  roles: {
+    key: AppRole;
+    name: string;
+  } | null;
+};
+
+async function getProfileFromDatabase(userId: string) {
+  const supabase = await createSupabaseServerClient();
+  if (!supabase) {
+    return null;
+  }
+
+  const { data } = await supabase
+    .from("users")
+    .select("id, email, display_name, member_id, is_approved, roles(key, name)")
+    .eq("id", userId)
+    .maybeSingle();
+
+  return (data as UserRoleJoin | null) || null;
+}
+
 export async function getCurrentUserProfile(): Promise<UserProfile> {
   if (!env.isSupabaseConfigured) {
     return demoUser;
@@ -28,15 +55,17 @@ export async function getCurrentUserProfile(): Promise<UserProfile> {
     redirect("/login");
   }
 
-  const role = (user.app_metadata.role as AppRole | undefined) || "guest";
+  const dbProfile = await getProfileFromDatabase(user.id);
+  const role = dbProfile?.roles?.key || (user.app_metadata.role as AppRole | undefined) || "guest";
 
   return {
     id: user.id,
-    email: user.email || "",
-    display_name: (user.user_metadata.full_name as string | undefined) || user.email || "Member",
+    email: dbProfile?.email || user.email || "",
+    display_name: dbProfile?.display_name || (user.user_metadata.full_name as string | undefined) || user.email || "Member",
     role,
-    role_label: await getUserRoleLabel(role),
-    member_id: (user.user_metadata.member_id as string | undefined) || null,
+    role_label: dbProfile?.roles?.name || (await getUserRoleLabel(role)),
+    member_id: dbProfile?.member_id || (user.user_metadata.member_id as string | undefined) || null,
+    is_approved: dbProfile?.is_approved ?? true,
   };
 }
 
@@ -58,15 +87,17 @@ export async function getOptionalUserProfile() {
     return null;
   }
 
-  const role = (user.app_metadata.role as AppRole | undefined) || "guest";
+  const dbProfile = await getProfileFromDatabase(user.id);
+  const role = dbProfile?.roles?.key || (user.app_metadata.role as AppRole | undefined) || "guest";
 
   return {
     id: user.id,
-    email: user.email || "",
-    display_name: (user.user_metadata.full_name as string | undefined) || user.email || "Member",
+    email: dbProfile?.email || user.email || "",
+    display_name: dbProfile?.display_name || (user.user_metadata.full_name as string | undefined) || user.email || "Member",
     role,
-    role_label: await getUserRoleLabel(role),
-    member_id: (user.user_metadata.member_id as string | undefined) || null,
+    role_label: dbProfile?.roles?.name || (await getUserRoleLabel(role)),
+    member_id: dbProfile?.member_id || (user.user_metadata.member_id as string | undefined) || null,
+    is_approved: dbProfile?.is_approved ?? true,
   } satisfies UserProfile;
 }
 

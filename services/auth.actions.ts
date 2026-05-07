@@ -2,10 +2,12 @@
 
 import { redirect } from "next/navigation";
 
+import { dashboardLandingByRole } from "@/lib/constants/app";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { forgotPasswordSchema, loginSchema } from "@/lib/schemas";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { env } from "@/lib/env";
+import type { AppRole } from "@/types/domain";
 
 export type ActionState = {
   error?: string;
@@ -46,7 +48,33 @@ export async function signInAction(_: ActionState, formData: FormData): Promise<
     return { error: error.message };
   }
 
-  redirect("/dashboard");
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data: dbUser } = (await (supabase as never as {
+    from: (table: string) => {
+      select: (query: string) => {
+        eq: (column: string, value: string) => {
+          maybeSingle: () => Promise<{ data: { is_approved: boolean; roles: { key?: AppRole } | null } | null }>;
+        };
+      };
+    };
+  })
+    .from("users")
+    .select("is_approved, roles(key)")
+    .eq("id", user?.id || "")
+    .maybeSingle()) as {
+    data: { is_approved: boolean; roles: { key?: AppRole } | null } | null;
+  };
+
+  if (dbUser && !dbUser.is_approved) {
+    await supabase.auth.signOut();
+    return { error: "Your account exists but is still waiting for admin approval." };
+  }
+
+  const role = ((dbUser?.roles as { key?: AppRole } | null)?.key || "guest") as AppRole;
+  redirect(dashboardLandingByRole[role] || "/dashboard");
 }
 
 export async function requestPasswordResetAction(_: ActionState, formData: FormData): Promise<ActionState> {

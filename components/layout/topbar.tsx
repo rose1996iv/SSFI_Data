@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { canAccessAdmin } from "@/lib/permissions";
 import type { UserProfile } from "@/types/domain";
 import { signOutAction } from "@/services/auth.actions";
 
@@ -74,6 +75,11 @@ export function Topbar({ profile }: { profile: UserProfile }) {
               <DropdownMenuItem asChild>
                 <Link href="/directory">Directory</Link>
               </DropdownMenuItem>
+              {canAccessAdmin(profile.role) ? (
+                <DropdownMenuItem asChild>
+                  <Link href="/admin">Admin</Link>
+                </DropdownMenuItem>
+              ) : null}
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <form action={signOutAction} className="w-full">

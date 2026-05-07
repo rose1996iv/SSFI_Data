@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { AnalyticsPanel } from "@/components/dashboard/analytics-panel";
 import { MetricCard } from "@/components/dashboard/metric-card";
@@ -7,10 +8,18 @@ import { PageIntro } from "@/components/shared/page-intro";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { dashboardLandingByRole } from "@/lib/constants/app";
+import { getCurrentUserProfile } from "@/lib/auth";
 import { getDashboardSnapshot } from "@/services/dashboard.service";
 import { formatDate } from "@/lib/utils";
 
 export default async function DashboardPage() {
+  const profile = await getCurrentUserProfile();
+  const preferredHome = dashboardLandingByRole[profile.role];
+  if (preferredHome !== "/dashboard") {
+    redirect(preferredHome);
+  }
+
   const snapshot = await getDashboardSnapshot();
 
   return (

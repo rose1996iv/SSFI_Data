@@ -28,3 +28,7 @@ export function canManageDocuments(role: AppRole) {
 export function canManageUsers(role: AppRole) {
   return hasMinimumRole(role, "admin");
 }
+
+export function canAccessAdmin(role: AppRole) {
+  return hasMinimumRole(role, "admin");
+}

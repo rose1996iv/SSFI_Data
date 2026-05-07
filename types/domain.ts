@@ -112,6 +112,20 @@ export type UserProfile = {
   role: AppRole;
   role_label: string;
   member_id?: string | null;
+  is_approved?: boolean;
+};
+
+export type UserDirectoryRecord = {
+  id: string;
+  email: string;
+  display_name?: string | null;
+  member_id?: string | null;
+  is_approved: boolean;
+  created_at: string;
+  updated_at: string;
+  role: AppRole;
+  role_label: string;
+  member?: Pick<Member, "id" | "full_name" | "email" | "status"> | null;
 };
 
 export type DashboardMetric = {
