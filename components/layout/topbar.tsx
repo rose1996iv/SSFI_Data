@@ -85,12 +85,11 @@ export function Topbar({ profile }: { profile: UserProfile }) {
                 <Link href="/dashboard/settings">Settings</Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <form action={signOutAction} className="w-full">
-                  <button type="submit" className="w-full text-left">
-                    Sign out
-                  </button>
-                </form>
+              <DropdownMenuItem
+                className="cursor-pointer text-destructive focus:text-destructive"
+                onSelect={() => signOutAction()}
+              >
+                Sign out
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

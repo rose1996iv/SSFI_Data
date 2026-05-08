@@ -1,224 +1,217 @@
-create extension if not exists "pgcrypto";
+-- ============================================================
+-- SSFI Data Center – Initial Schema
+-- Run this once against a fresh Supabase project.
+-- Tables used by the app (notifications removed – unused):
+--   roles, members, users, leadership_records,
+--   graduates, documents, activities
+-- ============================================================
 
-create table if not exists public.roles (
-  id uuid primary key default gen_random_uuid(),
-  name text not null unique,
-  key text not null unique check (key in ('super_admin', 'admin', 'executive', 'member', 'alumni', 'guest')),
+-- ── Extensions ────────────────────────────────────────────────────────────────
+create extension if not exists pgcrypto;
+
+-- ── Tables ────────────────────────────────────────────────────────────────────
+
+create table public.roles (
+  id          uuid        primary key default gen_random_uuid(),
+  name        text        not null unique,
+  key         text        not null unique
+                check (key in ('super_admin','admin','executive','member','alumni','guest')),
   description text,
-  created_at timestamptz not null default timezone('utc', now())
+  created_at  timestamptz not null default timezone('utc', now())
 );
 
-create table if not exists public.members (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid unique references auth.users(id) on delete set null,
-  profile_image text,
-  full_name text not null,
-  gender text,
-  date_of_birth date,
-  phone_number text,
-  email text not null unique,
-  whatsapp text,
-  telegram text,
-  village_in_myanmar text,
+create table public.members (
+  id                    uuid        primary key default gen_random_uuid(),
+  user_id               uuid        unique references auth.users(id) on delete set null,
+  profile_image         text,
+  full_name             text        not null,
+  gender                text,
+  date_of_birth         date,
+  phone_number          text,
+  email                 text        not null unique,
+  whatsapp              text,
+  telegram              text,
+  village_in_myanmar    text,
   current_city_in_india text,
-  state_in_india text,
-  university text,
-  major text,
-  batch text,
-  year_joined integer,
-  current_position text,
-  bio text,
-  status text not null default 'active' check (status in ('active', 'inactive', 'alumni')),
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  state_in_india        text,
+  university            text,
+  major                 text,
+  batch                 text,
+  year_joined           integer,
+  current_position      text,
+  bio                   text,
+  status                text        not null default 'active'
+                check (status in ('active','inactive','alumni')),
+  created_at            timestamptz not null default timezone('utc', now()),
+  updated_at            timestamptz not null default timezone('utc', now())
 );
 
-create table if not exists public.users (
-  id uuid primary key references auth.users(id) on delete cascade,
-  role_id uuid references public.roles(id) on delete restrict,
-  member_id uuid unique references public.members(id) on delete set null,
-  email text not null unique,
+create table public.users (
+  id           uuid        primary key references auth.users(id) on delete cascade,
+  role_id      uuid        references public.roles(id) on delete restrict,
+  member_id    uuid        unique references public.members(id) on delete set null,
+  email        text        not null unique,
   display_name text,
-  is_approved boolean not null default false,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  is_approved  boolean     not null default false,
+  created_at   timestamptz not null default timezone('utc', now()),
+  updated_at   timestamptz not null default timezone('utc', now())
 );
 
-create table if not exists public.leadership_records (
-  id uuid primary key default gen_random_uuid(),
-  member_id uuid not null references public.members(id) on delete cascade,
-  leadership_position text not null,
-  term_start date not null,
-  term_end date,
-  description text,
-  created_at timestamptz not null default timezone('utc', now())
+create table public.leadership_records (
+  id                  uuid        primary key default gen_random_uuid(),
+  member_id           uuid        not null references public.members(id) on delete cascade,
+  leadership_position text        not null,
+  term_start          date        not null,
+  term_end            date,
+  description         text,
+  created_at          timestamptz not null default timezone('utc', now())
 );
 
-create table if not exists public.graduates (
-  id uuid primary key default gen_random_uuid(),
-  member_id uuid not null references public.members(id) on delete cascade,
-  degree text not null,
+create table public.graduates (
+  id              uuid        primary key default gen_random_uuid(),
+  member_id       uuid        not null references public.members(id) on delete cascade,
+  degree          text        not null,
   graduation_date date,
-  graduation_year integer not null,
-  university text not null,
-  current_job text,
+  graduation_year integer     not null,
+  university      text        not null,
+  current_job     text,
   current_country text,
-  current_city text,
-  company text,
-  linkedin_url text,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  current_city    text,
+  company         text,
+  linkedin_url    text,
+  created_at      timestamptz not null default timezone('utc', now()),
+  updated_at      timestamptz not null default timezone('utc', now())
 );
 
-create table if not exists public.documents (
-  id uuid primary key default gen_random_uuid(),
-  title text not null,
+create table public.documents (
+  id          uuid        primary key default gen_random_uuid(),
+  title       text        not null,
   description text,
-  category text not null check (category in ('constitution', 'reports', 'minutes', 'events', 'other')),
-  file_path text not null,
-  file_name text not null,
-  file_size bigint,
-  mime_type text,
-  uploaded_by uuid references public.users(id) on delete set null,
-  created_at timestamptz not null default timezone('utc', now())
+  category    text        not null
+                check (category in ('constitution','reports','minutes','events','other')),
+  file_path   text        not null,
+  file_name   text        not null,
+  file_size   bigint,
+  mime_type   text,
+  uploaded_by uuid        references public.users(id) on delete set null,
+  created_at  timestamptz not null default timezone('utc', now())
 );
 
-create table if not exists public.activities (
-  id uuid primary key default gen_random_uuid(),
-  actor_user_id uuid references public.users(id) on delete set null,
-  action text not null,
-  entity_type text not null,
-  entity_id uuid,
-  metadata jsonb not null default '{}'::jsonb,
-  created_at timestamptz not null default timezone('utc', now())
+-- Audit log – used by activity.service.ts and user.service.ts
+create table public.activities (
+  id            uuid        primary key default gen_random_uuid(),
+  actor_user_id uuid        references public.users(id) on delete set null,
+  action        text        not null,
+  entity_type   text        not null,
+  entity_id     uuid,
+  metadata      jsonb       not null default '{}'::jsonb,
+  created_at    timestamptz not null default timezone('utc', now())
 );
 
-create table if not exists public.notifications (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references public.users(id) on delete cascade,
-  title text not null,
-  body text,
-  href text,
-  read_at timestamptz,
-  created_at timestamptz not null default timezone('utc', now())
-);
+-- ── updated_at trigger ────────────────────────────────────────────────────────
 
 create or replace function public.set_updated_at()
-returns trigger
-language plpgsql
-as $$
+returns trigger language plpgsql as $$
 begin
   new.updated_at = timezone('utc', now());
   return new;
 end;
 $$;
 
-drop trigger if exists set_members_updated_at on public.members;
-create trigger set_members_updated_at
-before update on public.members
-for each row execute function public.set_updated_at();
+create trigger trg_members_updated_at
+  before update on public.members
+  for each row execute function public.set_updated_at();
 
-drop trigger if exists set_users_updated_at on public.users;
-create trigger set_users_updated_at
-before update on public.users
-for each row execute function public.set_updated_at();
+create trigger trg_users_updated_at
+  before update on public.users
+  for each row execute function public.set_updated_at();
 
-drop trigger if exists set_graduates_updated_at on public.graduates;
-create trigger set_graduates_updated_at
-before update on public.graduates
-for each row execute function public.set_updated_at();
+create trigger trg_graduates_updated_at
+  before update on public.graduates
+  for each row execute function public.set_updated_at();
 
-insert into public.roles (name, key, description)
-values
+-- ── Seed roles ────────────────────────────────────────────────────────────────
+
+insert into public.roles (name, key, description) values
   ('Super Admin', 'super_admin', 'Full access to the platform'),
-  ('Admin', 'admin', 'Administrative access'),
-  ('Executive', 'executive', 'Leadership and operating access'),
-  ('Member', 'member', 'Standard member access'),
-  ('Alumni', 'alumni', 'Alumni access'),
-  ('Guest', 'guest', 'Read-only guest access')
+  ('Admin',       'admin',       'Administrative access'),
+  ('Executive',   'executive',   'Leadership and operating access'),
+  ('Member',      'member',      'Standard member access'),
+  ('Alumni',      'alumni',      'Alumni access'),
+  ('Guest',       'guest',       'Read-only guest access')
 on conflict (key) do update
-set
-  name = excluded.name,
-  description = excluded.description;
+  set name = excluded.name, description = excluded.description;
 
+-- ── Helper functions ──────────────────────────────────────────────────────────
+
+-- Returns the role key of the current authenticated user (or 'guest')
 create or replace function public.current_role()
 returns text
-language sql
-stable
-security definer
-set search_path = public
+language sql stable security definer set search_path = public
 as $$
   select coalesce(r.key, 'guest')
-  from public.users u
-  left join public.roles r on r.id = u.role_id
-  where u.id = auth.uid()
-  limit 1;
+  from   public.users u
+  left   join public.roles r on r.id = u.role_id
+  where  u.id = auth.uid()
+  limit  1;
 $$;
 
+-- Returns true if the current user is approved
 create or replace function public.is_approved_user()
 returns boolean
-language sql
-stable
-security definer
-set search_path = public
+language sql stable security definer set search_path = public
 as $$
   select coalesce(is_approved, false)
-  from public.users
-  where id = auth.uid()
-  limit 1;
+  from   public.users
+  where  id = auth.uid()
+  limit  1;
 $$;
 
+-- Returns true if current user meets the minimum role AND is approved
 create or replace function public.has_role(minimum_role text)
 returns boolean
-language plpgsql
-stable
-security definer
-set search_path = public
+language plpgsql stable security definer set search_path = public
 as $$
 declare
-  current text;
-  current_rank int;
-  minimum_rank int;
+  cur  text;
+  cr   int;
+  mr   int;
 begin
-  current := public.current_role();
-
-  current_rank := case current
-    when 'super_admin' then 5
-    when 'admin' then 4
-    when 'executive' then 3
-    when 'member' then 2
-    when 'alumni' then 1
-    else 0
-  end;
-
-  minimum_rank := case minimum_role
-    when 'super_admin' then 5
-    when 'admin' then 4
-    when 'executive' then 3
-    when 'member' then 2
-    when 'alumni' then 1
-    else 0
-  end;
-
-  return current_rank >= minimum_rank and public.is_approved_user();
+  cur := public.current_role();
+  cr  := case cur
+           when 'super_admin' then 5
+           when 'admin'       then 4
+           when 'executive'   then 3
+           when 'member'      then 2
+           when 'alumni'      then 1
+           else 0
+         end;
+  mr  := case minimum_role
+           when 'super_admin' then 5
+           when 'admin'       then 4
+           when 'executive'   then 3
+           when 'member'      then 2
+           when 'alumni'      then 1
+           else 0
+         end;
+  return cr >= mr and public.is_approved_user();
 end;
 $$;
 
+-- Auto-creates a public.users row when a new auth user signs up
 create or replace function public.bootstrap_user_profile()
 returns trigger
-language plpgsql
-security definer
-set search_path = public
+language plpgsql security definer set search_path = public
 as $$
 declare
-  default_role uuid;
+  guest_id uuid;
 begin
-  select id into default_role from public.roles where key = 'guest' limit 1;
+  select id into guest_id from public.roles where key = 'guest' limit 1;
 
   insert into public.users (id, role_id, email, display_name, is_approved)
   values (
     new.id,
-    default_role,
+    guest_id,
     new.email,
     coalesce(new.raw_user_meta_data ->> 'full_name', new.email),
     false
@@ -229,165 +222,148 @@ begin
 end;
 $$;
 
-drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
-after insert on auth.users
-for each row execute procedure public.bootstrap_user_profile();
+  after insert on auth.users
+  for each row execute procedure public.bootstrap_user_profile();
 
-create index if not exists idx_members_status on public.members(status);
-create index if not exists idx_members_university on public.members(university);
-create index if not exists idx_members_major on public.members(major);
-create index if not exists idx_members_state on public.members(state_in_india);
-create index if not exists idx_members_batch on public.members(batch);
-create index if not exists idx_members_position on public.members(current_position);
-create index if not exists idx_members_search on public.members using gin (to_tsvector('simple', coalesce(full_name, '') || ' ' || coalesce(email, '') || ' ' || coalesce(university, '') || ' ' || coalesce(major, '')));
-create index if not exists idx_leadership_member on public.leadership_records(member_id);
-create index if not exists idx_leadership_term on public.leadership_records(term_start desc);
-create index if not exists idx_graduates_member on public.graduates(member_id);
-create index if not exists idx_graduates_year on public.graduates(graduation_year desc);
-create index if not exists idx_documents_category on public.documents(category);
-create index if not exists idx_activities_actor on public.activities(actor_user_id);
-create index if not exists idx_notifications_user on public.notifications(user_id, read_at);
+-- ── Indexes ───────────────────────────────────────────────────────────────────
 
-alter table public.roles enable row level security;
-alter table public.users enable row level security;
-alter table public.members enable row level security;
+create index idx_members_status   on public.members(status);
+create index idx_members_univ     on public.members(university);
+create index idx_members_major    on public.members(major);
+create index idx_members_state    on public.members(state_in_india);
+create index idx_members_batch    on public.members(batch);
+create index idx_members_pos      on public.members(current_position);
+create index idx_members_fts      on public.members using gin (
+  to_tsvector('simple',
+    coalesce(full_name,'')    || ' ' ||
+    coalesce(email,'')        || ' ' ||
+    coalesce(university,'')   || ' ' ||
+    coalesce(major,''))
+);
+create index idx_leadership_mbr   on public.leadership_records(member_id);
+create index idx_leadership_term  on public.leadership_records(term_start desc);
+create index idx_graduates_mbr    on public.graduates(member_id);
+create index idx_graduates_yr     on public.graduates(graduation_year desc);
+create index idx_documents_cat    on public.documents(category);
+create index idx_activities_actor on public.activities(actor_user_id);
+
+-- ── Row Level Security ────────────────────────────────────────────────────────
+
+alter table public.roles              enable row level security;
+alter table public.users              enable row level security;
+alter table public.members            enable row level security;
 alter table public.leadership_records enable row level security;
-alter table public.graduates enable row level security;
-alter table public.documents enable row level security;
-alter table public.activities enable row level security;
-alter table public.notifications enable row level security;
+alter table public.graduates          enable row level security;
+alter table public.documents          enable row level security;
+alter table public.activities         enable row level security;
 
-create policy "roles readable by approved users"
-on public.roles
-for select
-using (public.is_approved_user());
+-- roles
+create policy "roles: approved read"
+  on public.roles for select
+  using (public.is_approved_user());
 
-create policy "users readable by admins"
-on public.users
-for select
-using (public.has_role('admin'));
+-- users
+create policy "users: admin read"
+  on public.users for select
+  using (public.has_role('admin'));
 
-create policy "users updatable by admins"
-on public.users
-for update
-using (public.has_role('admin'))
-with check (public.has_role('admin'));
+create policy "users: own read"
+  on public.users for select
+  using (auth.uid() = id);
 
-create policy "members readable by approved users"
-on public.members
-for select
-using (public.is_approved_user());
+create policy "users: admin update"
+  on public.users for update
+  using (public.has_role('admin'))
+  with check (public.has_role('admin'));
 
-create policy "members writable by executives"
-on public.members
-for insert
-with check (public.has_role('executive'));
+-- members
+create policy "members: approved read"
+  on public.members for select
+  using (public.is_approved_user());
 
-create policy "members updatable by executives"
-on public.members
-for update
-using (public.has_role('executive'))
-with check (public.has_role('executive'));
+create policy "members: exec insert"
+  on public.members for insert
+  with check (public.has_role('executive'));
 
-create policy "members deletable by admins"
-on public.members
-for delete
-using (public.has_role('admin'));
+create policy "members: exec update"
+  on public.members for update
+  using (public.has_role('executive'))
+  with check (public.has_role('executive'));
 
-create policy "leadership readable by approved users"
-on public.leadership_records
-for select
-using (public.is_approved_user());
+create policy "members: admin delete"
+  on public.members for delete
+  using (public.has_role('admin'));
 
-create policy "leadership writable by executives"
-on public.leadership_records
-for all
-using (public.has_role('executive'))
-with check (public.has_role('executive'));
+-- leadership_records
+create policy "leadership: approved read"
+  on public.leadership_records for select
+  using (public.is_approved_user());
 
-create policy "graduates readable by approved users"
-on public.graduates
-for select
-using (public.is_approved_user());
+create policy "leadership: exec all"
+  on public.leadership_records for all
+  using (public.has_role('executive'))
+  with check (public.has_role('executive'));
 
-create policy "graduates writable by executives"
-on public.graduates
-for all
-using (public.has_role('executive'))
-with check (public.has_role('executive'));
+-- graduates
+create policy "graduates: approved read"
+  on public.graduates for select
+  using (public.is_approved_user());
 
-create policy "documents readable by approved users"
-on public.documents
-for select
-using (public.is_approved_user());
+create policy "graduates: exec all"
+  on public.graduates for all
+  using (public.has_role('executive'))
+  with check (public.has_role('executive'));
 
-create policy "documents writable by admins"
-on public.documents
-for all
-using (public.has_role('admin'))
-with check (public.has_role('admin'));
+-- documents
+create policy "documents: approved read"
+  on public.documents for select
+  using (public.is_approved_user());
 
-create policy "activities readable by admins"
-on public.activities
-for select
-using (public.has_role('admin'));
+create policy "documents: admin all"
+  on public.documents for all
+  using (public.has_role('admin'))
+  with check (public.has_role('admin'));
 
-create policy "activities insert by approved users"
-on public.activities
-for insert
-with check (public.is_approved_user());
+-- activities
+create policy "activities: admin read"
+  on public.activities for select
+  using (public.has_role('admin'));
 
-create policy "notifications readable by owner"
-on public.notifications
-for select
-using (auth.uid() = user_id);
+create policy "activities: approved insert"
+  on public.activities for insert
+  with check (public.is_approved_user());
 
-create policy "notifications insert by admins"
-on public.notifications
-for insert
-with check (public.has_role('admin'));
-
-create policy "notifications update by owner"
-on public.notifications
-for update
-using (auth.uid() = user_id)
-with check (auth.uid() = user_id);
+-- ── Storage ───────────────────────────────────────────────────────────────────
 
 insert into storage.buckets (id, name, public)
 values
-  ('member-assets', 'member-assets', true),
+  ('member-assets',          'member-assets',          true),
   ('organization-documents', 'organization-documents', false)
 on conflict (id) do nothing;
 
-create policy "member assets readable by approved users"
-on storage.objects
-for select
-using (bucket_id = 'member-assets' and public.is_approved_user());
+create policy "member-assets: approved read"
+  on storage.objects for select
+  using (bucket_id = 'member-assets' and public.is_approved_user());
 
-create policy "member assets writable by executives"
-on storage.objects
-for insert
-with check (bucket_id = 'member-assets' and public.has_role('executive'));
+create policy "member-assets: exec insert"
+  on storage.objects for insert
+  with check (bucket_id = 'member-assets' and public.has_role('executive'));
 
-create policy "member assets updatable by executives"
-on storage.objects
-for update
-using (bucket_id = 'member-assets' and public.has_role('executive'))
-with check (bucket_id = 'member-assets' and public.has_role('executive'));
+create policy "member-assets: exec update"
+  on storage.objects for update
+  using (bucket_id = 'member-assets' and public.has_role('executive'))
+  with check (bucket_id = 'member-assets' and public.has_role('executive'));
 
-create policy "organization documents readable by approved users"
-on storage.objects
-for select
-using (bucket_id = 'organization-documents' and public.is_approved_user());
+create policy "org-docs: approved read"
+  on storage.objects for select
+  using (bucket_id = 'organization-documents' and public.is_approved_user());
 
-create policy "organization documents writable by admins"
-on storage.objects
-for insert
-with check (bucket_id = 'organization-documents' and public.has_role('admin'));
+create policy "org-docs: admin insert"
+  on storage.objects for insert
+  with check (bucket_id = 'organization-documents' and public.has_role('admin'));
 
-create policy "organization documents updatable by admins"
-on storage.objects
-for update
-using (bucket_id = 'organization-documents' and public.has_role('admin'))
-with check (bucket_id = 'organization-documents' and public.has_role('admin'));
+create policy "org-docs: admin update"
+  on storage.objects for update
+  using (bucket_id = 'organization-documents' and public.has_role('admin'))
+  with check (bucket_id = 'organization-documents' and public.has_role('admin'));
