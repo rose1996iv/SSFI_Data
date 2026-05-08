@@ -31,7 +31,7 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${jakarta.variable} ${mono.variable} h-full`}
     >
-      <body className="min-h-full font-sans">
+      <body className="min-h-full font-sans" suppressHydrationWarning>
         <AppProviders>{children}</AppProviders>
       </body>
     </html>
